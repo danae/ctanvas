@@ -179,7 +179,7 @@ var CTA = function(train, nextTrain)
 // Constants
 CTA.prototype.light = "rgb(255,255,255)";
 CTA.prototype.dark = "rgb(9,40,105)";
-CTA.prototype.font = "BenchNine, sans-serif";
+CTA.prototype.font = "'Open Sans Condensed', sans-serif";
 
 // Return the opposite color for light and dark
 CTA.prototype.opposite = function(color)
