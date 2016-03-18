@@ -157,15 +157,21 @@ var CTA = function(train, nextTrain)
   
   // Fill info lines
   this.infos = [];
-  for (var i = 0; i < this.train.infoOptional.length; i ++)
-    this.infos.push({text: this.train.infoOptional[i], color: CTA.prototype.light});
-  for (var i = 0; i < this.train.info.length; i ++)
-    this.infos.push({text: this.train.info[i], color: CTA.prototype.dark});
+  if (typeof this.train.infoOptional !== 'undefined')
+  {
+    for (var i = 0; i < this.train.infoOptional.length; i ++)
+      this.infos.push({text: this.train.infoOptional[i], color: CTA.prototype.light});
+  }
+  if (typeof this.train.info !== 'undefined')
+  {
+    for (var i = 0; i < this.train.info.length; i ++)
+      this.infos.push({text: this.train.info[i], color: CTA.prototype.dark});
+  }
   
   // Add info for next train
   if (typeof this.nextTrain !== 'undefined' && this.nextTrain !== null)
   {
-    var text = CTA.prototype.formatTime(this.nextTrain.time) + " " + this.nextTrain.type + " " + this.nextTrain.destination.name[0] + (this.nextTrain.delay > 0 ? " " + this.formatDelayShort(this.nextTrain.delay) : "");
+    var text = CTA.prototype.formatTime(this.nextTrain.time) + " " + this.nextTrain.type + " " + this.nextTrain.destination.name[0] + (typeof this.nextTrain.delay !== 'undefined' && this.nextTrain.delay > 0 ? " " + this.formatDelayShort(this.nextTrain.delay) : "");
     this.infos.push({text: text, color: CTA.prototype.dark});
   }
 };
@@ -219,7 +225,7 @@ CTA.prototype.draw = function(canvas)
   ctx.fillText(this.formatTime(this.train.time),boundary_large,font_y_time);
   
   // Draw delay if there is delay, else draw train type
-  if (this.delay > 0)
+  if (typeof this.train.delay !== 'undefined' && this.train.delay > 0)
   {
     // Draw delay
     ctx.fillStyle = this.dark;

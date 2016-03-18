@@ -23,11 +23,13 @@
     <script src="../cta.js"></script>
     <script>
       var station;
-      $(document).on('ready hashchange',function()
+      var load = function()
       {
         $('#cta-container').html("");
         station = new Station(window.location.hash.replace(/^#/g,""));
-      });
+      };
+      $(document).on('ready',load);
+      $(window).on('hashchange',load);
       $(window).on('cta-ready',function()
       {
         for (var platform in station.cta)
