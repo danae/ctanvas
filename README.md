@@ -6,7 +6,7 @@
 
 **cta.js** is a JavaScript library to draw CTAs, signs displaying the next train departing from a station, used by the Dutch Railways, on a HTML5 canvas element. The library uses the [Rijden De Treinen API](https://github.com/geertw/rdt-infoplus-dvs) to fetch the actual departure times and uses these to create a CTA for every platform.
 
-The current features of cta.js include:
+To give an impression of the functionality of cta.js, you can view this [preview page](https://dl.dropboxusercontent.com/u/12669217/cta.js/preview.html#rtd). The current features of cta.js include:
 
  - Fetching of departing trains from a Dutch railway station.
  - Drawing a CTA given a current train and an optional next train.
@@ -14,9 +14,9 @@ The current features of cta.js include:
 
 ## Download and installation
 
-You can download the latest release op cta.js from GitHub. Currently the only dependency is **jQuery**. The library is built using version 2.1
+You can download the latest release of cta.js from GitHub. Currently the only dependency is **jQuery**. The library is built using version 2.1.
 
-To use cta.js, you can include the script file in your HTML pagejust as any other script:
+To use cta.js, you can include the script file in your HTML page just as any other script.
 
     <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script src="cta.js"></script>
@@ -37,13 +37,13 @@ What follows is a basic tutorial on how to use the library. A more complete exam
     // Used to store the current station
     var station;
 
-    // The 'cta-ready' event is triggered if the station list is loaded
-    $(window).on('cta-ready',function() {
+    // Start loading the station if the document is loaded
+    $(document).ready(function() {
       station = new Station("Utrecht Centraal");
     });
 
-    // The 'cta-station-ready' event is triggered if the departing trains are loaded
-    $(window).on('cta-station-ready',function() {
+    // The 'cta-ready' event is triggered if the departing trains are loaded
+    $(window).on('cta-ready',function() {
       // Station.cta contains the CTAs per platform
       for (var platform in station.cta)
         // CTA.createAndDraw() creates a new canvas and draws the CTA

@@ -23,14 +23,13 @@
     <script src="../cta.js"></script>
     <script>
       var station;
-      $(window).on('cta-ready hashchange',function()
+      $(document).on('ready hashchange',function()
       {
         $('#cta-container').html("");
         station = new Station(window.location.hash.replace(/^#/g,""));
       });
-      $(window).on('cta-station-ready',function()
+      $(window).on('cta-ready',function()
       {
-        console.log(station);
         for (var platform in station.cta)
           $('#cta-container').append(station.cta[platform].createAndDraw(400,200));
       });
