@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CTA</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=BenchNine:700" rel="stylesheet">
+    <style>
+      canvas.cta {
+        border: 16px rgb(14,58,153) solid;
+        margin: 4px;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <main>
+      <div style="font-family: 'BenchNine'; display: hidden;">&nbsp;</div>
+      <div id="cta-container"></div>
+    </main>
+    
+    <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="../cta.js"></script>
+    <script>
+      var station;
+      $(window).on('cta-ready hashchange',function()
+      {
+        $('#cta-container').html("");
+        station = new Station(window.location.hash.replace(/^#/g,""));
+      });
+      $(window).on('cta-station-ready',function()
+      {
+        console.log(station);
+        for (var platform in station.cta)
+          $('#cta-container').append(station.cta[platform].createAndDraw(400,200));
+      });
+      </script>
+  </body>
+</html>
