@@ -68,16 +68,16 @@ The `new Train` constructor returns a new, empty `Train` object.  The `Train` cl
 
 The `Train` class has the following properties:
 
- - `number: String` contains the internal train number.
- - `type: String` contains the type of the train, like Intercity or Sprinter.
- - `operator: String` contains the operator of this line, like NS or Arriva.
+ - `number: string` contains the internal train number.
+ - `type: string` contains the type of the train, like Intercity or Sprinter.
+ - `operator: string` contains the operator of this line, like NS or Arriva.
  - `destination: Station` contains the destination station.
  - `route: Array[Station]` contains the via-stations of this line.
  - `time: Date` contains the departure time.
- - `delay: Integer` contains the departure delay in minutes.
- - `platform: String` contains the departure platform.
- - `info: Array[String]` contains obligaroty information about the departure (`opmerkingen` in RDT-API).
- - `infoOptional: Array[String]`contains optional information about the line (`tips` in RDT-API).
+ - `delay: integer` contains the departure delay in minutes.
+ - `platform: string` contains the departure platform.
+ - `info: Array[string]` contains obligaroty information about the departure (`opmerkingen` in RDT-API).
+ - `infoOptional: Array[string]`contains optional information about the line (`tips` in RDT-API).
 
 ### Station class
 
@@ -95,13 +95,18 @@ The `Station` class has the following properties:
 
 #### Find a station
 
-    var station = Station.find(query)
+    var station = Station.find(query, [placeholder])
 
-The `find` function returns a `Station` object based on a query, or `null` if not station was found. The query is tested against the code and all the names of the station. 
+The `find` function returns a `Station` object based on a query. The query is tested against the code and all the names of the station. 
+The **`query`** parameter defines the query to search for, the **`placeholder`** parameter is a boolean defining the return behaviour if no station is found:
+
+- If a station is found, this is returned as a `Station` object
+- If **`placeholder`** is `false`, then `null` is returned if no station is found
+- If **`placeholder`** is `true`, a `Station` object containing `{name: query}` is returned if no station is found
 
 ### CTA class
 
-    var cta = new CTA(train, nextTrain)
+    var cta = new CTA(train, [nextTrain])
 
 The `new CTA` constructor returns a new CTA based on the current train and an optional next train.
 The **`train`** and optional **`nextTrain`** parameters contain a `Train` object (for example one of `Station.trains`). 
@@ -110,7 +115,6 @@ The ``CTA class has the following properties:
 
 - `train: Train` contains the currently displayed train.
 - `nextTrain: Train` contains the next displayed train, or can be `null` if there is no next train.
-
 
 #### Draw the CTA
 

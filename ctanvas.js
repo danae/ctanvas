@@ -171,12 +171,11 @@ var Station = function(data)
   {
     data = Station.find(data);
     if (data === null)
-      throw "NotFoundError: No station found for '" + data.query + "'";
+      throw "NotFoundError: station '" + data.query + "'";
   }
   
   // Copy the station data into this object
-  for (var key in data)
-    this[key] = data[key];
+  Utils.copy(data,this);
   
   this.trains = [];
   this.cta = {};
@@ -195,13 +194,13 @@ var Station = function(data)
           "treinNr": "number",
           "soort": "type",
           "vervoerder": "operator",
-          "bestemming": {key: "destination", fn: Station.find},
+          "bestemming": {key: "destination", fn: station => Station.find(station,true)},
           "via": {key: "route", fn: function(a)
           {
             if (typeof a === 'undefined' || a === null)
               return [];
             else
-              return a.split(", ").map(Station.find);
+              return a.split(", ").map(station => Station.find(station,true));
           }},
           "vertrek": {key: "time", fn: a => new Date(a)},
           "vertraging": "delay",
@@ -266,7 +265,7 @@ Station.prototype.platforms = function()
 };
 
 // Returns a found station given a code or name query, or null if nothing found
-Station.find = function(query)
+Station.find = function(query, placeholder = false)
 {
   // Check if already cached
   if (Queries.hasOwnProperty(query))
@@ -289,7 +288,10 @@ Station.find = function(query)
   }
   
   // No match, only return the query
-  return Queries[query] = null;
+  if (placeholder)
+    return {names: [query]};
+  else
+    return Queries[query] = null;
 };
 
 //-----------------------------------------------------------------------------
