@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fictional CTA</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=BenchNine:700" rel="stylesheet">
+    <style>
+      #cta {
+        border: 16px rgb(14,58,153) solid;
+        margin: 4px;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <main>
+      <div style="font-family: 'Open Sans Condensed'; display: hidden;">&nbsp;</div>
+      <canvas width="600" height="300" id="cta"></canvas>
+    </main>
+    
+    <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="../ctanvas.js"></script>
+    <script>
+      $(document).ready(function()
+      {
+        var cta = new CTA(Train.of({
+          type: 'Lightrail',
+          destination: {names: ['Woudenberg-Scherpenzeel']},
+          route: [{names: ['Amersfoort Centraal']}, {names: ['Amersfoort Arnhemseweg']}],
+          time: new Date(Date.now()),
+          delay: 13,
+          platform: "1",
+          infoOptional: ["Stopt ook bij Thomas voor de deur","Stopt niet bij Menno voor de deur"]
+        }),Train.of({
+          type: 'Lightrail',
+          destination: {names: ['Amersfoort Vathorst']},
+          time: new Date(Date.now())
+        }));
+        cta.draw(document.getElementById('cta'));
+      });
+      </script>
+  </body>
+</html>

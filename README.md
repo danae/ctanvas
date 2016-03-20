@@ -1,39 +1,42 @@
-# CTA.js
+# Ctanvas
 
-[![GitHub release](https://img.shields.io/github/release/dengsn/cta.js.svg)](https://github.com/dengsn/cta.js/releases) [![Github Releases](https://img.shields.io/github/downloads/dengsn/cta.js/latest/total.svg)](https://github.com/dengsn/cta.js/releases)
+[![GitHub release](https://img.shields.io/github/release/dengsn/Ctanvas.svg)](https://github.com/dengsn/Ctanvas/releases) [![Github Releases](https://img.shields.io/github/downloads/dengsn/Ctanvas/latest/total.svg)](https://github.com/dengsn/Ctanvas/releases)
 
-**cta.js** is een JavaScript-bibliotheek om de welbekende [Centraal Bediende Treinaanwijzers](https://nl.wikipedia.org/wiki/Centraal_bediende_treinaanwijzers_in_Nederland) (CTA's) die op de meeste NS-stations hangen, te tekenen op het HTML5 canvas-element. De bibliotheek haalt de actuele vertrektijden op via de [Rijden De Treinen-API](https://github.com/geertw/rdt-infoplus-dvs) en verwerkt deze tot CTA's per spoot. Omdat de bibliotheek in het Engels is geschreven, volgt de verdere technische uitleg in het Engels.
+**Ctanvas** is een JavaScript-bibliotheek om de welbekende [Centraal Bediende Treinaanwijzers](https://nl.wikipedia.org/wiki/Centraal_bediende_treinaanwijzers_in_Nederland) (CTA's) die op de meeste NS-stations hangen, te tekenen op het HTML5 canvas-element. De bibliotheek haalt de actuele vertrektijden op via de [Rijden De Treinen-API](https://github.com/geertw/rdt-infoplus-dvs) en verwerkt deze tot CTA's per spoot. Omdat de bibliotheek in het Engels is geschreven, volgt de verdere technische uitleg in het Engels.
 
 ---
 
-**cta.js** is a JavaScript library to draw CTAs, signs displaying the next train departing from a station, used by the Dutch Railways, on a HTML5 canvas element. The library uses the [Rijden De Treinen API](https://github.com/geertw/rdt-infoplus-dvs) to fetch the actual departure times and uses these to create a CTA for every platform.
+**Ctanvas** is a JavaScript library to draw CTAs, train indicators displaying the next train departing from a station, used by the [Dutch Railways](http://ns.nl), on a HTML5 canvas element. The library uses the [Rijden De Treinen API](https://github.com/geertw/rdt-infoplus-dvs) to fetch the actual departure times and uses these to create a CTA for every platform.
 
-To give an impression of the functionality of cta.js, you can view this [preview page](https://dl.dropboxusercontent.com/u/12669217/cta.js/preview.html#rtd). The current features of cta.js include:
+To give an impression of the functionality of Ctanvas, you can view this [preview page](https://dl.dropboxusercontent.com/u/12669217/Ctanvas/preview.html#rtd). The current features of Ctanvas include:
 
- - Fetching of departing trains from a Dutch railway station.
+ - Fetching departing trains from a Dutch railway station.
  - Drawing a CTA given a current train and an optional next train.
  - Automatically creating a CTA for every platform on the station.
 
 ## Download and installation
 
-You can download the latest release of cta.js from GitHub. Currently the only dependency is **jQuery**. The library is built using version 2.1.
+The latest release of Ctanvas is available under the [releases](https://github.com/dengsn/Ctanvas/releases) tab in the [GitHub repository](https://github.com/dengsn/Ctanvas). Ctanvas depends on the following external libraries, make sure you download and include them in your project as well:
 
-To use cta.js, you can include the script file in your HTML page just as any other script.
+- [jQuery](https://jquery.com/) >= `1.12.0`
 
-    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script src="cta.js"></script>
+To use Ctanvas, you must include the script file in your HTML5 page just as any other script:
+
+    <script src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="ctanvas.js"></script>
 
 ## Usage
 
-The cta.js library exists of several classes to minimize the effort of creating CTAs. These are
+The Ctanvas library exists of several classes to minimize the effort of creating CTAs. These are:
 
+- `Train` to store information of a departing train, such as time, platform and route.
 - `Station` for storing the code and names of a station and the departing trains and CTAs for the platforms.
 - `CTA` for drawing a CTA on a HTML5 canvas element.
 
 What follows is a basic tutorial on how to use the library. A more complete example is situated in the `tests/index.html` file.
 
     <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script src="cta.js"></script>
+    <script src="ctanvas.js"></script>
     
     <script>
     // Used to store the current station
@@ -55,64 +58,74 @@ What follows is a basic tutorial on how to use the library. A more complete exam
 
 ## Documentation
 
-Only the relevant functions to use the library are listed here; the library contains some more utility functions that can be inspected in the source code.
+This documentation only includes the functions in the public API. For a full documentation, please refer to the source code, where comments are placed along with each function.
+
+### Train class
+
+    var train = new Train()
+
+The `new Train` constructor returns a new, empty `Train` object.  The `Train` class contains information about a departing train, such as time, platform and route.
+
+The `Train` class has the following properties:
+
+ - `number: String` contains the internal train number.
+ - `type: String` contains the type of the train, like Intercity or Sprinter.
+ - `operator: String` contains the operator of this line, like NS or Arriva.
+ - `destination: Station` contains the destination station.
+ - `route: Array[Station]` contains the via-stations of this line.
+ - `time: Date` contains the departure time.
+ - `delay: Integer` contains the departure delay in minutes.
+ - `platform: String` contains the departure platform.
+ - `info: Array[String]` contains obligaroty information about the departure (`opmerkingen` in RDT-API).
+ - `infoOptional: Array[String]`contains optional information about the line (`tips` in RDT-API).
 
 ### Station class
 
     var station = new Station(data)
 
-The station constructor creates a new station based on the given argument. The **data** parameter can either be a string containing the name or code of the station, or an object containing a `name` array of strings and a `code` string (as returned by `Station.prototype.find(query)`. The function returns a new `Station` instance and loads the departing trans and CTAs. The class has the following properties:
+The `new Station` constructor returns a new `Station` object and loads the departing trans and CTAs per platform, based on the given argument. 
+The **`data`** parameter can either be a string containing the name or code of the station, or an object containing a `name` array of strings and a `code` string (as returned by `Station.find(query)`.
 
-- `station.name: Array of String` contains the names of the station.
-- `station.code: String`  containins the internal station code.
-- `station.trains: Array of Train` denotes the departing trains at this station.
-- `station.cta: Object` contains CTA objects containing a CTA for every platform at the station. For example `station.cta["8a"]` contains the CTA for platform 8a.
+The `Station` class has the following properties:
+
+- `code: String`  contains the internal station code.
+- `names: Array[String]` contains the names of the station.
+- `trains: Array of Train` lists the departing trains at this station.
+- `cta: Object` contains `CTA` objects for every platform at the station. For example `cta["8a"]` contains the CTA for platform 8a.
 
 #### Find a station
 
-    var station = Station.prototype.find(query)
+    var station = Station.find(query)
 
-The `find` function is used to fetch a `Station` object based on a query. The query is tested against the code and all the names of the station. This function returns `{query: query}` if no station was found.
-
-#### Get all platforms
-
-    Station.prototype.platforms()
-
-The `platforms` function returns a naturally sorted array of strings, containing the platforms of this station, based on the departing trains.
+The `find` function returns a `Station` object based on a query, or `null` if not station was found. The query is tested against the code and all the names of the station. 
 
 ### CTA class
 
-    var cta = new CTA(train, [nextTrain])
+    var cta = new CTA(train, nextTrain)
 
-The CTA constructor creates a new CTA based on the current train and an optional next train. The **train** and optional **nextTrain** arguments contain a train object returned by `station.trains`. The function returns a new `CTA` object. The class has the following properties:
+The `new CTA` constructor returns a new CTA based on the current train and an optional next train.
+The **`train`** and optional **`nextTrain`** parameters contain a `Train` object (for example one of `Station.trains`). 
 
-- `cta.train: Train` contains the currently displayed train.
-- `cta.nextTrain: Train` contains the next displayed train, or can be `null` if there is no next train.
+The ``CTA class has the following properties:
+
+- `train: Train` contains the currently displayed train.
+- `nextTrain: Train` contains the next displayed train, or can be `null` if there is no next train.
 
 
 #### Draw the CTA
 
     CTA.prototype.draw(canvas)
 
-The `draw` function draws the CTA on a predefined canvas object. The **canvas** argument denotes this canvas.
+The `draw` function draws the CTA on a predefined canvas object. The **`canvas`** argument denotes the already defined `<canvas>` element to draw on.
 
 #### Create a canvas and draw the CTA
 
     var canvas = CTA.prototype.createAndDraw(width, height)
 
-The `createAndDraw` function creates a new canvas element, draws the CTA on it using the `draw` function and returns it. The **width** and **height** parameters specify the dimensions of the canvas to be created.
-    
-### Train object
+The `createAndDraw` function creates a new `<canvas>` element, draws the CTA on it using the `draw` function and returns the canvas. The **`width`** and **`height`** parameters specify the dimensions of the canvas to be created.
 
-The `Train` object contains information about a departing train. It has the following properties:
+### Events
 
- - `number: String` contains the internal train number.
- - `type: String` contains the type of the train, like Intercity or Sprinter.
- - `operator: String` contains the operator of this line, like NS or Arriva.
- - `destination: Station` contains the destination station.
- - `route: Array of Station` contains the via-stations of this line.
- - `time: Date` contains the departure time.
- - `delay: Integer` contains the departure delay in minutes.
- - `platform: String` contains the departure platform.
- - `info: Array of String` contains obligaroty information about the departure (`opmerkingen` in RDT-API).
- - `infoOptional: Array of String`contains optional information about the line (`tips` in RDT-API).
+    $(window).on('cta-ready')
+
+The  `cta-ready` event is triggered if the `Station` class has loaded its trains and CTAs. Because the trains are fetched 
