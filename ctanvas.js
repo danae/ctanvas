@@ -166,16 +166,17 @@ Train.of = function(data)
 // Station class for managing trains and CTAs
 var Station = function(data)
 {
-  // Parse the data string if not already
+  // Parse the data string if not already and copy into this object
   if (typeof data === 'string')
   {
-    data = Station.find(data);
-    if (data === null)
-      throw "NotFoundError: station '" + data.query + "'";
+    var nData = Station.find(data);
+    if (nData === null)
+      throw "NotFoundError: station '" + data + "'";
+    else
+      Utils.copy(nData,this);
   }
-  
-  // Copy the station data into this object
-  Utils.copy(data,this);
+  else
+    Utils.copy(data,this);
   
   this.trains = [];
   this.cta = {};
@@ -230,6 +231,15 @@ var Station = function(data)
     }
   });
 };
+
+// Returns the common name of the station
+Station.prototype.name = function()
+{
+  if (this.names.length > 0)
+    return this.names[0];
+  else
+    return "";
+}
 
 // Get an array of unique platforms on this station
 Station.prototype.platforms = function()
@@ -301,7 +311,6 @@ var CTA = function(train, nextTrain = null)
 {
   this.train = train;
   this.nextTrain = nextTrain;
-  console.log(this);
   
   // Fill info lines
   this.infos = [];
@@ -396,7 +405,6 @@ CTA.prototype.draw = function(canvas)
   ctx.fillStyle = this.dark;
   var text = function(names, maxWidth)
   {
-    console.log(names);
     for (var i = 0; i < names.length; i ++)
     {
       if (ctx.measureText(names[i]).width <= maxWidth)
@@ -404,7 +412,6 @@ CTA.prototype.draw = function(canvas)
     }
     return Utils.wrap(names[0],maxWidth,canvas,false,true)[0];
   }(this.train.destination.names,canvas.width - 2 * boundary_small);
-  console.log(text);
   ctx.fillText(text,boundary_small,font_y_destination);
   
   // Draw route

@@ -132,4 +132,4 @@ The `createAndDraw` function creates a new `<canvas>` element, draws the CTA on 
 
     $(window).on('cta-ready')
 
-The  `cta-ready` event is triggered if the `Station` class has loaded its trains and CTAs. Because the trains are fetched 
+The  `cta-ready` event is triggered if the `Station` class has loaded its trains and CTAs. Because the trains are fetched in an asynchronous AJAX call, there is no other indication when the CTAs are done loading.
