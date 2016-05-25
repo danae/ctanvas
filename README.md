@@ -2,13 +2,13 @@
 
 [![GitHub release](https://img.shields.io/github/release/dengsn/Ctanvas.svg)](https://github.com/dengsn/Ctanvas/releases) [![Github Releases](https://img.shields.io/github/downloads/dengsn/Ctanvas/latest/total.svg)](https://github.com/dengsn/Ctanvas/releases)
 
-**Ctanvas** is een JavaScript-bibliotheek om de welbekende [Centraal Bediende Treinaanwijzers](https://nl.wikipedia.org/wiki/Centraal_bediende_treinaanwijzers_in_Nederland) (CTA's) die op de meeste NS-stations hangen, te tekenen op het HTML5 canvas-element. De bibliotheek haalt de actuele vertrektijden op via de [Rijden De Treinen-API](https://github.com/geertw/rdt-infoplus-dvs) en verwerkt deze tot CTA's per spoot. Omdat de bibliotheek in het Engels is geschreven, volgt de verdere technische uitleg in het Engels.
+**Ctanvas** is een JavaScript-bibliotheek om de welbekende [Centraal Bediende Treinaanwijzers](https://nl.wikipedia.org/wiki/Centraal_bediende_treinaanwijzers_in_Nederland) (CTA's) die op de meeste NS-stations te vinden zijn, te tekenen op het HTML5 canvas-element. De bibliotheek haalt de actuele vertrektijden op via de [Rijden De Treinen-API](https://github.com/geertw/rdt-infoplus-dvs) en verwerkt deze tot CTA's per spoor. Omdat de bibliotheek in het Engels is geschreven, volgt de verdere technische uitleg in het Engels.
 
 ---
 
 **Ctanvas** is a JavaScript library to draw CTAs, train indicators displaying the next train departing from a station, used by the [Dutch Railways](http://ns.nl), on a HTML5 canvas element. The library uses the [Rijden De Treinen API](https://github.com/geertw/rdt-infoplus-dvs) to fetch the actual departure times and uses these to create a CTA for every platform.
 
-To give an impression of the functionality of Ctanvas, you can view this [preview page](https://dl.dropboxusercontent.com/u/12669217/Ctanvas/preview.html#rtd). The current features of Ctanvas include:
+To give an impression of the functionality of Ctanvas, you can view this [preview page](http://ctanvas.com). The current features of Ctanvas include:
 
  - Fetching departing trains from a Dutch railway station.
  - Drawing a CTA given a current train and an optional next train.
