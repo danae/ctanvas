@@ -8,7 +8,7 @@
 
 **Ctanvas** is a JavaScript library to draw CTAs, train indicators displaying the next train departing from a station, used by the [Dutch Railways](http://ns.nl), on a HTML5 canvas element. The library uses the [Rijden De Treinen API](https://github.com/geertw/rdt-infoplus-dvs) to fetch the actual departure times and uses these to create a CTA for every platform.
 
-To give an impression of the functionality of Ctanvas, you can view this [preview page](https://dl.dropboxusercontent.com/u/12669217/Ctanvas/preview.html#rtd). The current features of Ctanvas include:
+To give an impression of the functionality of Ctanvas, you can view this [preview page](http://ctanvas.com). The current features of Ctanvas include:
 
  - Fetching departing trains from a Dutch railway station.
  - Drawing a CTA given a current train and an optional next train.
