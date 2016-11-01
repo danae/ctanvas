@@ -21,6 +21,7 @@
 
 // Load stations in a cache and create a cache for queries
 var Stations = [];
+var StationsLoaded = 0;
 var Queries = [];
 
 // Load the stations from the API
@@ -39,73 +40,50 @@ $(document).ready(function()
         // Check if in the Netherlands
         if (station.land !== 'NL')
           continue;
-      
-        // Push the station
-        Stations.push({
-          code: station.code,
-          names: [station.value]
-        });
+        
+        // Check if already in the list, else create a new station
+        var filtereds = Stations.filter(element => station.code === element.code);
+        if (filtereds.length > 0)
+          filtereds[0].synonyms.push(station.value);
+        else
+          Stations.push({
+            code: station.code, 
+            name: station.value, 
+            synonyms: [],
+            lat: station.geo_lat,
+            lon: station.geo_lng
+          });
       }
-    
-      // Trigger station ready event
+      
+      // Trigger ready event
       $(document).trigger('cta-stations-ready');
     }
   });
- });
+});
 
 //-----------------------------------------------------------------------------
 
 // Utility functions
 var Utils = function(){};
 
-// Copies object properties to another based on a map
-Utils.copy = function(a, b, map = {})
+// Copies object properties to another
+Utils.copy = function(a, b)
 {
-  // Loop over the keys
-  for (var key in a)
-  {
-    if (!a.hasOwnProperty(key))
-      continue;
-    
-    // Check if there exists a mapping, else just copy
-    var mapping = map[key];
-    if (typeof mapping === 'undefined')
-      b[key] = a[key];
-    
-    // If mapping is an object, then map using this function
-    else if (typeof mapping === 'object')
-    {
-      if (typeof mapping.key !== 'string')
-        throw "TypeError: mapping key was not defined";
-      
-      var mKey = mapping.key;
-      if (typeof mapping.fn === 'function')
-        b[mKey] = mapping.fn.call(this,a[key]);
-      else
-        b[mKey] = a[key];
-    }
-    
-    // If mapping is a string, then map 1:1
-    else
-      b[mapping] = a[key];
-  }
-  
-  // Return the destination
+  for (var property in a)
+    if (a.hasOwnProperty(property))
+      b[property] = a[property];
   return b;
-}
-
-// Pads a string with zeroes
-Utils.pad = function(number, length)
-{
-  var string = new String(number);
-  while (string.length < length)
-    string = "0" + string;
-  return string;
 };
 
 // Wraps a string into lines using words, optionally using dots
-Utils.wrap = function(text, maxWidth, canvas, wordWrap = true, dots = false)
+Utils.wrap = function(text, maxWidth, canvas, wordWrap, dots)
 {
+  // Create default variables
+  if (typeof wordWrap === 'undefined')
+    wordWrap = true;
+  if (typeof dots === 'undefined')
+    dots = false;
+  
   var splitter = (wordWrap ? " " : "");
   var dot = (dots ? "..." : "");
   
@@ -135,9 +113,56 @@ Utils.wrap = function(text, maxWidth, canvas, wordWrap = true, dots = false)
 
 //-----------------------------------------------------------------------------
 
-// Train class for managing train properties
-var Train = function()
+// Formatter class
+var Formatter = function(){};
+
+// Pads a string with zeroes
+Formatter.pad = function(number, length)
 {
+  var string = new String(number);
+  while (string.length < length)
+    string = "0" + string;
+  return string;
+};
+
+// Format a Date to "HH:mm"
+Formatter.time = function(time)
+{
+  return Formatter.pad(time.getHours(),2) + ":" + Formatter.pad(time.getMinutes(),2);
+};
+
+// Format a delay in minutes to "+d"
+Formatter.delay = function(delay, round)
+{
+  if (typeof round === 'undefined')
+    round = true;
+  
+  return "+" + (round ? Math.ceil(delay / 5) * 5 : delay);
+};
+
+// Format a route
+Formatter.route = function(route)
+{
+  if (typeof route === 'undefined' || route === null || route.length === 0)
+    return "";
+  else if (route.length === 1)
+    return "via " + route[0].name;
+  else if (route.length === 2)
+    return "via " + route[0].name + " en " + route[1].name;
+
+  var string = "via " + route[0].name;
+  for (var i = 1; i < route.length - 1; i ++)
+    string += ", " + route[i].name;
+  string += " en " + route[route.length - 1].name;
+  return string;
+};
+
+//-----------------------------------------------------------------------------
+
+// Train class for managing train properties
+var Train = function(object)
+{
+  // Variables
   this.number = "";
   this.type = "";
   this.operator = "";
@@ -148,68 +173,39 @@ var Train = function()
   this.platform = "";
   this.info = [];
   this.infoOptional = [];
-};
-
-// Train formatting functions
-Train.prototype.formatTime = function()
-{
-  return Utils.pad(this.time.getHours(),2) + ":" + Utils.pad(this.time.getMinutes(),2);
-};
-Train.prototype.formatDelayShort = function()
-{
-  return "+" + this.delay;
-};
-Train.prototype.formatDelay = function()
-{
-  return this.formatDelayShort() + " minuten";
-};
-Train.prototype.formatRoute = function()
-{
-  if (typeof this.route === 'undefined' || this.route === null || this.route.length === 0)
-    return "";
-  else if (this.route.length === 1)
-    return "via " + this.route[0].names[0];
-  else if (this.route.length === 2)
-    return "via " + this.route[0].names[0] + " en " + this.route[1].names[0];
-
-  var string = "via " + this.route[0].names[0];
-  for (var i = 1; i < this.route.length - 1; i ++)
-    string += ", " + this.route[i].names[0];
-  string += " en " + this.route[this.route.length - 1].names[0];
-  return string;
+  
+  // Set object if defined
+  if (typeof object !== 'undefined')
+    Utils.copy(object,this);
 };
 
 // Returns a string representation of this Train (for use as next train string)
 Train.prototype.toString = function()
 {
-  return this.formatTime() + " " + this.type + " " + this.destination.names[0] + (this.delay > 0 ? " " + this.formatDelayShort() : "")
-}
-
-// Creates a train based on the given data
-Train.of = function(data)
-{
-  return Utils.copy(data,new Train());
-}
+  return Formatter.time(this.time) + " " + this.type + " " + this.destination.name + (this.delay > 0 ? " " + Formatter.delay(this.delay) : "");
+};
 
 //-----------------------------------------------------------------------------
 
 // Station class for managing trains and CTAs
-var Station = function(data)
+var Station = function(object, silent = false)
 {
-  // Parse the data string if not already and copy into this object
-  if (typeof data === 'string')
-  {
-    var nData = Station.find(data);
-    if (nData === null)
-      throw "NotFoundError: station '" + data + "'";
-    else
-      Utils.copy(nData,this);
-  }
-  else
-    Utils.copy(data,this);
-  
+  // Variables
+  this.code = '';
+  this.name = '';
+  this.synonyms = [];
   this.trains = [];
   this.cta = {};
+  
+  // Set object if defined
+  if (typeof object !== 'undefined')
+  {
+    object = typeof object === 'string' ? Station.find(object) : object;
+    if (object === null)
+      throw "NotFoundError: '" + object + "'";
+    else
+      Utils.copy(object,this);
+  }
   
   // Load the trains and create CTAs
   $.ajax({
@@ -221,23 +217,19 @@ var Station = function(data)
       // Parse the trains into the station
       for (var i = 0; i < data.vertrektijden.length; i ++)
       {
-        this.trains.push(Utils.copy(data.vertrektijden[i],new Train(),{
-          "treinNr": "number",
-          "soort": "type",
-          "vervoerder": "operator",
-          "bestemming": {key: "destination", fn: station => Station.find(station,true)},
-          "via": {key: "route", fn: function(a)
-          {
-            if (typeof a === 'undefined' || a === null)
-              return [];
-            else
-              return a.split(", ").map(station => Station.find(station,true));
-          }},
-          "vertrek": {key: "time", fn: a => new Date(a)},
-          "vertraging": "delay",
-          "spoor": "platform",
-          "opmerkingen": "info",
-          "tips": "infoOptional"
+        var vertrektijd = data.vertrektijden[i];
+        
+        this.trains.push(new Train({
+          number: vertrektijd.treinNr,
+          type: vertrektijd.soort,
+          operator: vertrektijd.vervoerder,
+          destination: Station.findOrFake(vertrektijd.bestemming),
+          route: (typeof vertrektijd.via !== 'undefined' && vertrektijd.via !== null) ? vertrektijd.via.split(',').map(station => Station.findOrFake(station)) : [],
+          time: new Date(vertrektijd.vertrek),
+          delay: vertrektijd.vertraging,
+          platform: vertrektijd.spoor,
+          info: vertrektijd.opmerkingen,
+          infoOptional: vertrektijd.tips
         }));
       }
       
@@ -256,20 +248,12 @@ var Station = function(data)
           this.cta[platform] = new CTA(trains[0]);
       }
       
-      // Trigger ready event
-      $(document).trigger('cta-ready');
+      // Create CTAs per platform
+      if (!silent)
+        $(document).trigger('cta-ready',[this]);
     }
   });
 };
-
-// Returns the common name of the station
-Station.prototype.name = function()
-{
-  if (this.names.length > 0)
-    return this.names[0];
-  else
-    return "";
-}
 
 // Get an array of unique platforms on this station
 Station.prototype.platforms = function()
@@ -294,10 +278,11 @@ Station.prototype.platforms = function()
     b.replace(/(\d+)|(\D+)/g, function(_, $1, $2) { bx.push([$1 || Infinity, $2 || ""]) });
     
     while(ax.length && bx.length) {
-        var an = ax.shift();
-        var bn = bx.shift();
-        var nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
-        if(nn) return nn;
+      var an = ax.shift();
+      var bn = bx.shift();
+      var nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+      if (nn)
+        return nn;
     }
 
     return ax.length - bx.length;
@@ -305,7 +290,7 @@ Station.prototype.platforms = function()
 };
 
 // Returns a found station given a code or name query, or null if nothing found
-Station.find = function(query, placeholder = false)
+Station.find = function(query)
 {
   // Check if already cached
   if (Queries.hasOwnProperty(query))
@@ -315,7 +300,15 @@ Station.find = function(query, placeholder = false)
   for (var i = 0; i < Stations.length; i ++)
   {
     var station = Stations[i];
-    if ($.inArray(query,station.names) >= 0)
+    if (station.name === query)
+      return Queries[query] = station;
+  }
+  
+  // Check for synonyms
+  for (var i = 0; i < Stations.length; i ++)
+  {
+    var station = Stations[i];
+    if ($.inArray(query,station.synonyms) >= 0)
       return Queries[query] = station;
   }
   
@@ -327,18 +320,31 @@ Station.find = function(query, placeholder = false)
       return Queries[query] = station;
   }
   
-  // No match, only return the query
-  if (placeholder)
-    return {names: [query]};
-  else
-    return Queries[query] = null;
+  // No match, return null
+  return Queries[query] = null;
+};
+
+// Returns a found station given a code or name query, or a placeholder is nothing found
+Station.findOrFake = function(query)
+{
+  return Station.find(query) || {name: query};
+};
+
+// Select a random station
+Station.random = function()
+{
+  return Stations[Math.floor(Math.random() * Stations.length)];
 };
 
 //-----------------------------------------------------------------------------
 
 // CTA class for drawing CTAs from two trains
-var CTA = function(train, nextTrain = null)
+var CTA = function(train, nextTrain)
 {
+  // Create default variables
+  if (typeof nextTrain === 'undefined')
+    nextTrain = null;
+  
   this.train = train;
   this.nextTrain = nextTrain;
   
@@ -406,7 +412,7 @@ CTA.prototype.draw = function(canvas)
   ctx.font = "bold " + font_size_time + "px " + this.font;
   ctx.textAlign = "left";
   ctx.fillStyle = this.dark;
-  ctx.fillText(this.train.formatTime(),boundary_large,font_y_time);
+  ctx.fillText(Formatter.time(this.train.time),boundary_large,font_y_time);
   
   // Draw delay if there is delay, else draw train type
   if (typeof this.train.delay !== 'undefined' && this.train.delay > 0)
@@ -418,7 +424,7 @@ CTA.prototype.draw = function(canvas)
     ctx.font = "bold " + font_size_time + "px " + this.font;
     ctx.textAlign = "left";
     ctx.fillStyle = this.light;
-    ctx.fillText(this.train.formatDelay(),delay_x + boundary_large,font_y_time);
+    ctx.fillText(Formatter.delay(this.train.delay) + " minuten",delay_x + boundary_large,font_y_time);
   }
   else
   {
@@ -433,7 +439,7 @@ CTA.prototype.draw = function(canvas)
   ctx.font = "bold " + font_size_destination + "px " + this.font;
   ctx.textAlign = "left";
   ctx.fillStyle = this.dark;
-  var text = function(names, maxWidth)
+  /*var text = function(names, maxWidth)
   {
     for (var i = 0; i < names.length; i ++)
     {
@@ -441,7 +447,8 @@ CTA.prototype.draw = function(canvas)
         return names[i];
     }
     return Utils.wrap(names[0],maxWidth,canvas,false,true)[0];
-  }(this.train.destination.names,canvas.width - 2 * boundary_small);
+  }(this.train.destination.names,canvas.width - 2 * boundary_small);*/
+  var text = this.train.destination.name;
   ctx.fillText(text,boundary_small,font_y_destination);
   
   // Draw route
@@ -449,7 +456,7 @@ CTA.prototype.draw = function(canvas)
   ctx.textAlign = "left";
   ctx.fillStyle = this.dark;
   
-  var wrapped = Utils.wrap(this.train.formatRoute(),canvas.width - 2 * boundary_large,canvas);
+  var wrapped = Utils.wrap(Formatter.route(this.train.route),canvas.width - 2 * boundary_large,canvas);
   for (var i = 0; i < wrapped.length; i ++)
     ctx.fillText(wrapped[i],boundary_large,font_y_route + i * font_height_route);
   

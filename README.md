@@ -2,13 +2,9 @@
 
 [![GitHub release](https://img.shields.io/github/release/dengsn/Ctanvas.svg)](https://github.com/dengsn/Ctanvas/releases) [![Github Releases](https://img.shields.io/github/downloads/dengsn/Ctanvas/latest/total.svg)](https://github.com/dengsn/Ctanvas/releases)
 
-**Ctanvas** is een JavaScript-bibliotheek om de welbekende [Centraal Bediende Treinaanwijzers](https://nl.wikipedia.org/wiki/Centraal_bediende_treinaanwijzers_in_Nederland) (CTA's) die op de meeste NS-stations te vinden zijn, te tekenen op het HTML5 canvas-element. De bibliotheek haalt de actuele vertrektijden op via de [Rijden De Treinen-API](https://github.com/geertw/rdt-infoplus-dvs) en verwerkt deze tot CTA's per spoor. Omdat de bibliotheek in het Engels is geschreven, volgt de verdere technische uitleg in het Engels.
-
----
-
 **Ctanvas** is a JavaScript library to draw CTAs, train indicators displaying the next train departing from a station, used by the [Dutch Railways](http://ns.nl), on a HTML5 canvas element. The library uses the [Rijden De Treinen API](https://github.com/geertw/rdt-infoplus-dvs) to fetch the actual departure times and uses these to create a CTA for every platform.
 
-To give an impression of the functionality of Ctanvas, you can view this [preview page](http://ctanvas.com). The current features of Ctanvas include:
+The current features of Ctanvas include:
 
  - Fetching departing trains from a Dutch railway station.
  - Drawing a CTA given a current train and an optional next train.
@@ -33,27 +29,27 @@ The Ctanvas library exists of several classes to minimize the effort of creating
 - `Station` for storing the code and names of a station and the departing trains and CTAs for the platforms.
 - `CTA` for drawing a CTA on a HTML5 canvas element.
 
-What follows is a basic tutorial on how to use the library. A more complete example is situated in the `tests/index.html` file.
+What follows is a basic tutorial on how to use the library:
 
-    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script src="ctanvas.js"></script>
+    <script src="path/to/jquery.js"></script>
+    <script src="path/to/ctanvas.js"></script>
     
     <script>
-    // Used to store the current station
-    var station;
+      // Used to store the current station
+      var station;
 
-    // Start loading the station if the document is loaded
-    $(document).ready(function() {
-      station = new Station("Utrecht Centraal");
-    });
+      // The 'cta-stations-ready' event is triggered if all stations are loaded
+      $(document).on('cta-stations-ready',function() {
+        station = new Station("Utrecht Centraal");
+      });
 
-    // The 'cta-ready' event is triggered if the departing trains are loaded
-    $(window).on('cta-ready',function() {
-      // Station.cta contains the CTAs per platform
-      for (var platform in station.cta)
-        // CTA.createAndDraw() creates a new canvas and draws the CTA
-        $('body').append(station.cta[platform].createAndDraw(400,200));
-    });
+      // The 'cta-ready' event is triggered if the departing trains are loaded
+      $(document).on('cta-ready',function() {
+        // Station.cta contains the CTAs per platform
+        for (var platform in station.cta)
+          // CTA.createAndDraw() creates a new canvas and draws the CTA
+          $('body').append(station.cta[platform].createAndDraw(400,200));
+      });
     </script>
 
 ## Documentation
@@ -62,9 +58,9 @@ This documentation only includes the functions in the public API. For a full doc
 
 ### Train class
 
-    var train = new Train()
+    new Train(object)
 
-The `new Train` constructor returns a new, empty `Train` object.  The `Train` class contains information about a departing train, such as time, platform and route.
+The `new Train` constructor returns a new, empty `Train` object.  The `Train` class contains information about a departing train, such as time, platform and route. The **`object`** parameter can contain an `Object` with predefined properties, as described below.
 
 The `Train` class has the following properties:
 
@@ -81,35 +77,40 @@ The `Train` class has the following properties:
 
 ### Station class
 
-    var station = new Station(data)
+    new Station(object)
 
-The `new Station` constructor returns a new `Station` object and loads the departing trans and CTAs per platform, based on the given argument. 
-The **`data`** parameter can either be a string containing the name or code of the station, or an object containing a `name` array of strings and a `code` string (as returned by `Station.find(query)`.
+The `new Station` constructor returns a new `Station` object and loads the departing trans and CTAs per platform, based on the given argument. The **`object`** parameter can either contain an `Object` with predefined properties, as described below, or a query `String` to search for the station using the `find` function.
 
 The `Station` class has the following properties:
 
 - `code: String`  contains the internal station code.
-- `names: Array[String]` contains the names of the station.
+- `name: String` contains the name of the station
+- `synonyms: Array of String` contains the synonyms of the station.
 - `trains: Array of Train` lists the departing trains at this station.
-- `cta: Object` contains `CTA` objects for every platform at the station. For example `cta["8a"]` contains the CTA for platform 8a.
+- `cta: Object` contains `CTA` objects for every platform at the station. For example `cta['8a']` contains the CTA for platform 8a.
 
 #### Find a station
 
-    var station = Station.find(query, [placeholder])
+    Station.find(query)
 
-The `find` function returns a `Station` object based on a query. The query is tested against the code and all the names of the station. 
-The **`query`** parameter defines the query to search for, the **`placeholder`** parameter is a boolean defining the return behaviour if no station is found:
+The `find` function returns a `Station` object based on a query. The query is tested against the code and all the names of the station. The **`query`** parameter defines the query to search for.  If a station is found, this is returned as a `Station` object, otherwise the function returns `null`.
 
-- If a station is found, this is returned as a `Station` object
-- If **`placeholder`** is `false`, then `null` is returned if no station is found
-- If **`placeholder`** is `true`, a `Station` object containing `{name: query}` is returned if no station is found
+    Station.findOrFake(query)
+
+The `findOrFake` function always returns a `Station` object, whether the `find` function finds a station or not. If no station is found, the query is filled in in the `name` property of the `Station` object.
+
+#### Select a random station
+
+    Station.random()
+
+The `random`function returns a random `Station` object representing one of the stations in the Netherlands.
 
 ### CTA class
 
-    var cta = new CTA(train, [nextTrain])
+    new CTA(train, [nextTrain])
 
 The `new CTA` constructor returns a new CTA based on the current train and an optional next train.
-The **`train`** and optional **`nextTrain`** parameters contain a `Train` object (for example one of `Station.trains`). 
+The **`train`** and optional **`nextTrain`** parameters contain a `Train` object, for example one of `Station.trains`. 
 
 The ``CTA class has the following properties:
 
@@ -124,12 +125,16 @@ The `draw` function draws the CTA on a predefined canvas object. The **`canvas`*
 
 #### Create a canvas and draw the CTA
 
-    var canvas = CTA.prototype.createAndDraw(width, height)
+    CTA.prototype.createAndDraw(width, height)
 
 The `createAndDraw` function creates a new `<canvas>` element, draws the CTA on it using the `draw` function and returns the canvas. The **`width`** and **`height`** parameters specify the dimensions of the canvas to be created.
 
 ### Events
 
-    $(window).on('cta-ready')
+    $(document).on('cta-stations-ready')
+
+The `cta-stations-ready` event is triggered if all stations are loaded into memory. The loading happoens automatically in the `ready` event of the current document.
+
+    $(document).on('cta-ready')
 
 The  `cta-ready` event is triggered if the `Station` class has loaded its trains and CTAs. Because the trains are fetched in an asynchronous AJAX call, there is no other indication when the CTAs are done loading.
