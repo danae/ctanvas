@@ -38,13 +38,13 @@ What follows is a basic tutorial on how to use the library:
       // Used to store the current station
       var station;
 
-      // The 'cta-stations-ready' event is triggered if all stations are loaded
-      $(document).on('cta-stations-ready',function() {
+      // The 'cta.ready' event is triggered if all stations are loaded
+      $(document).on('cta.ready',function() {
         station = new Station("Utrecht Centraal");
       });
 
-      // The 'cta-ready' event is triggered if the departing trains are loaded
-      $(document).on('cta-ready',function() {
+      // The 'cta.stationready' event is triggered if the departing trains are loaded
+      $(document).on('cta.stationready',function() {
         // Station.cta contains the CTAs per platform
         for (var platform in station.cta)
           // CTA.createAndDraw() creates a new canvas and draws the CTA
