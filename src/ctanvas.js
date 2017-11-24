@@ -22,7 +22,7 @@
 // Load stations in a cache and create a cache for queries
 var Stations = [];
 var StationsLoaded = 0;
-var Queries = [];
+var Index = null;
 
 // Load the stations from the API
 $(function()
@@ -56,8 +56,21 @@ $(function()
           });
       }
       
+      // Create an search index
+      Index = lunr(function()
+      {
+        this.ref('code');
+        this.field('code');
+        this.field('name');
+        
+        Stations.forEach(function(station)
+        {
+          this.add(station);
+        },this);
+      });
+      
       // Trigger ready event
-      $(document).trigger('cta-stations-ready');
+      $(document).trigger('cta.ready');
     }
   });
 });
@@ -227,7 +240,7 @@ var Station = function(object, silent = false)
           type: vertrektijd.soort,
           operator: vertrektijd.vervoerder,
           destination: Station.findOrFake(vertrektijd.bestemming),
-          route: (typeof vertrektijd.via !== 'undefined' && vertrektijd.via !== null) ? vertrektijd.via.split(',').map(station => Station.findOrFake(station)) : [],
+          route: (typeof vertrektijd.via !== 'undefined' && vertrektijd.via !== null) ? vertrektijd.via.split(', ').map(station => Station.findOrFake(station)) : [],
           time: new Date(vertrektijd.vertrek),
           delay: vertrektijd.vertraging,
           platform: vertrektijd.spoor,
@@ -257,7 +270,7 @@ var Station = function(object, silent = false)
       
       // Trigger the event
       if (!silent)
-        $(document).trigger('cta-ready',[this]);
+        $(document).trigger('cta.stationready',[this]);
     }
   });
 };
@@ -299,36 +312,24 @@ Station.prototype.platforms = function()
 // Returns a found station given a code or name query, or null if nothing found
 Station.find = function(query)
 {
-  // Check if already cached
-  if (Queries.hasOwnProperty(query))
-    return Queries[query];
- 
-  // Check for names
-  for (var i = 0; i < Stations.length; i ++)
-  {
-    var station = Stations[i];
-    if (station.name === query)
-      return Queries[query] = station;
-  }
+  // Search for the station
+  var results = Index.search(query);
   
-  // Check for synonyms
-  for (var i = 0; i < Stations.length; i ++)
-  {
-    var station = Stations[i];
-    if ($.inArray(query,station.synonyms) >= 0)
-      return Queries[query] = station;
-  }
+  // Check if there are results, otherwise return null
+  if (results.length === 0)
+    return null;
   
-  // Check for code
+  // Map the first result to a station
+  var code = results[0].ref;
   for (var i = 0; i < Stations.length; i ++)
   {
     var station = Stations[i];
-    if (station.code.toLowerCase() === query.toLowerCase())
-      return Queries[query] = station;
+    if (station.code.toLowerCase() === code.toLowerCase())
+      return station;
   }
   
   // No match, return null
-  return Queries[query] = null;
+  return null;
 };
 
 // Returns a found station given a code or name query, or a placeholder is nothing found

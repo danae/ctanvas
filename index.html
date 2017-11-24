@@ -27,6 +27,7 @@
     </main>
     
     <script src="https://code.jquery.com/jquery-1.12.2.min.js"></script>
+    <script src="https://unpkg.com/lunr/lunr.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script src="src/ctanvas.js"></script>
     <script>
@@ -50,7 +51,7 @@
       });
       
       // If the document is ready, the load Utrecht Centraal
-      $(document).on('cta-stations-ready',function()
+      $(document).on('cta.ready',function()
       {
         loadStation("ut");
       });
@@ -71,7 +72,7 @@
       });
       
       // If the CTAs are loaded, draw them
-      $(document).on('cta-ready',function()
+      $(document).on('cta.stationready',function()
       {
         console.log(station);
         
