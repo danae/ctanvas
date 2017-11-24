@@ -25,13 +25,14 @@ var StationsLoaded = 0;
 var Queries = [];
 
 // Load the stations from the API
-$(document).ready(function()
+$(function()
 {
   $.ajax({
-    url: "//api.rijdendetreinen.nl/v1/json/stations",
+    url: "stations_proxy.php",
+    dataType: "json",
     context: this,
     success: function(stations)
-    {     
+    {  
       // Iterate over stations and save them in cache
       for (var i = 0; i < stations.length; i ++)
       {
@@ -172,7 +173,7 @@ var Train = function(object)
   this.delay = 0;
   this.platform = "";
   this.info = [];
-  this.infoOptional = [];
+  this.tips = [];
   
   // Set object if defined
   if (typeof object !== 'undefined')
@@ -195,6 +196,7 @@ var Station = function(object, silent = false)
   this.name = '';
   this.synonyms = [];
   this.trains = [];
+  this.pb7 = [];
   this.cta = {};
   
   // Set object if defined
@@ -209,7 +211,8 @@ var Station = function(object, silent = false)
   
   // Load the trains and create CTAs
   $.ajax({
-    url: "//api.rijdendetreinen.nl/v2/json/vertrektijden",
+    url: "vertrektijden_proxy.php",
+    crossDomain: true,
     data: {station: this.code},
     context: this,
     success: function(data)
@@ -229,9 +232,13 @@ var Station = function(object, silent = false)
           delay: vertrektijd.vertraging,
           platform: vertrektijd.spoor,
           info: vertrektijd.opmerkingen,
-          infoOptional: vertrektijd.tips
+          tips: vertrektijd.tips
         }));
       }
+      
+      // Create PB7s for this station
+      for (var i = 0; i < this.trains.length; i += 7)
+        this.pb7.push(new PB7(this.trains,i));
       
       // Create CTAs per platform
       var platforms = this.platforms();
@@ -248,7 +255,7 @@ var Station = function(object, silent = false)
           this.cta[platform] = new CTA(trains[0]);
       }
       
-      // Create CTAs per platform
+      // Trigger the event
       if (!silent)
         $(document).trigger('cta-ready',[this]);
     }
@@ -316,7 +323,7 @@ Station.find = function(query)
   for (var i = 0; i < Stations.length; i ++)
   {
     var station = Stations[i];
-    if (station.code === query)
+    if (station.code.toLowerCase() === query.toLowerCase())
       return Queries[query] = station;
   }
   
@@ -338,6 +345,228 @@ Station.random = function()
 
 //-----------------------------------------------------------------------------
 
+// PB7 class for drawing PB7s from a station
+var PB7 = function(trains, offset = 0)
+{
+  this.trains = trains.slice(offset,offset + 7);
+};
+
+// Constants
+PB7.prototype.light = "rgb(255,255,255)";
+PB7.prototype.middle = "rgb(198,214,230)";
+PB7.prototype.dark = "rgb(9,40,105)";
+PB7.prototype.red = "rgb(220,40,40)";
+PB7.prototype.font = "'Open Sans Condensed', sans-serif";
+
+// Column class
+PB7.Column = function(canvas, start, end, label = '') 
+{
+  this.canvas = canvas;
+  this.start = start;
+  this.end = end;
+  this.label = label;
+  
+  this.margin = 0.019;
+};
+
+PB7.Column.prototype.left = function()
+{
+  return this.start * this.canvas.width;
+};
+PB7.Column.prototype.leftMargin = function()
+{
+  return (this.start + this.margin) * this.canvas.width;
+};
+PB7.Column.prototype.right = function()
+{
+  return this.end * this.canvas.width;
+};
+PB7.Column.prototype.rightMargin = function()
+{
+  return (this.end - this.margin) * this.canvas.width;
+};
+PB7.Column.prototype.width = function()
+{
+  return (this.start - this.end) * this.canvas.width;
+};
+
+// Draw the PB7
+PB7.prototype.draw = function(canvas)
+{
+  var ctx = canvas.getContext("2d");
+  
+  // Determine sizes  
+  var cols = [
+    new PB7.Column(canvas, 0.012, 0.127, 'Vertrek'),
+    new PB7.Column(canvas, 0.127, 0.627, 'Naar / Opmerkingen'),
+    new PB7.Column(canvas, 0.627, 0.710, 'Spoor'),
+    new PB7.Column(canvas, 0.710, 0.988, 'Trein')
+  ];
+  
+  var boundary_small = 0.019 * canvas.height;
+  var header_height = 0.054 * canvas.height;
+  var departure_height = 0.135 * canvas.height;  
+  var row_x_type = 0.729 * canvas.width;
+  var row_x_currenttime = 0.896 * canvas.width;
+  var font_y_header = 0.037 * canvas.height;
+  var font_y_time = 0.057 * canvas.height;
+  var font_y_type = 0.085 * canvas.height;
+  var font_size_header = 0.037 * canvas.height;
+  var font_size_time = 0.064 * canvas.height;
+  var font_size_type = 0.054 * canvas.height;
+  var font_size_platform = 0.065 * canvas.height;
+  var icon_boundary = 0.0101 * canvas.height;
+  var icon_hap = 0.022 * canvas.height;
+  
+  // Draw background
+  ctx.fillStyle = this.light;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  // Draw header
+  ctx.fillStyle = this.middle;
+  ctx.fillRect(0,0,canvas.width,header_height);
+  
+  ctx.fillStyle = this.dark;
+  ctx.fillRect(row_x_currenttime,0,canvas.width - row_x_currenttime,header_height);
+    
+  // Draw header text
+  ctx.font = "bold " + font_size_header + "px " + this.font;
+  ctx.textAlign = "left";
+  ctx.fillStyle = this.dark;
+  for (var i = 0; i < cols.length; i ++)
+  {
+    var col = cols[i];
+    ctx.fillText(col.label,col.leftMargin(),font_y_header);
+  }
+  
+  // Draw current time
+  ctx.font = "bold " + font_size_header + "px " + this.font;
+  ctx.textAlign = "right";
+  ctx.fillStyle = this.light;
+  ctx.fillText(Formatter.time(new Date()),canvas.width - boundary_small,font_y_header);
+    
+  // Draw trains
+  for (var i = 0; i < 7; i ++)
+  {
+    var train = this.trains[i];
+    
+    // Determine sizes
+    var base = {
+      x: 0,
+      y: header_height + (canvas.height - header_height) / 7 * i,
+      w: canvas.width,
+      h: header_height + (canvas.height - header_height) / 7 * (i + 1)
+    };
+    var base_y = header_height + i * departure_height;
+    
+    var font_y_info = 0.692 * departure_height;
+    var font_size_info = 0.315 * departure_height;
+    var info_height = 0.438 * departure_height;
+    
+    // Draw background
+    ctx.fillStyle = (i % 2 === 0) ? this.light : this.middle;
+    ctx.fillRect(base.x,base.y,base.w,base.h);
+    
+    // Draw time
+    ctx.font = "bold " + font_size_time + "px " + this.font;
+    ctx.textAlign = "left";
+    ctx.fillStyle = this.dark;
+    ctx.fillText(Formatter.time(train.time),cols[0].leftMargin(),base.y + font_y_time);
+    
+    // Draw delay if there is delay
+    if (typeof train.delay !== 'undefined' && train.delay > 0)
+    {
+      // Draw delay    
+      ctx.font = "bold " + font_size_info + "px " + this.font;
+      ctx.textAlign = "right";
+      ctx.fillStyle = this.red;
+      ctx.fillText(Formatter.delay(train.delay),cols[0].rightMargin(),base_y + font_y_info);
+    }
+    
+    // Draw destination
+    ctx.font = "bold " + font_size_time + "px " + this.font;
+    ctx.textAlign = "left";
+    ctx.fillStyle = this.dark;
+    ctx.fillText(train.destination.name,cols[1].leftMargin(),base.y + font_y_time);
+    
+    // Draw info
+    var info = "Geen reisinformatie beschikbaar";
+    var info_color = this.dark;
+    
+    // Draw info background
+    /*if (info_color !== null)
+    {
+      ctx.fillStyle = info_color;
+      ctx.fillRect(cols[1].left(),base.y + base.h - info_height,cols[1].width(),info_height);
+    }*/
+    
+    // Draw info text
+    ctx.font = "bold " + font_size_info + "px " + this.font;
+    ctx.textAlign = "left";
+    ctx.fillStyle = this.dark;
+    ctx.fillText(info,cols[1].leftMargin(),base.y + base.h - info_height + font_y_info);
+    
+    /*while (textWidth(this.getText()) > w)
+    {
+      font_size_info -= 1.0;
+      textFont(nsfont,font_size_info);
+    }*/
+    
+    // Draw platform icon
+    var icon_x = cols[2].leftMargin();
+    var icon_y = base.y + icon_boundary;
+    var icon_xw = row_x_type - 2 * boundary_small;
+    var icon_yh = base.y + departure_height - icon_boundary;
+    var icon_w = icon_xw - icon_x;
+    var icon_h = icon_yh - icon_y;
+    
+    ctx.fillStyle = this.light;
+    ctx.strokeStyle = this.dark;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cols[2].leftMargin() + icon_hap, icon_y);
+    ctx.lineTo(icon_xw,icon_y);
+    ctx.lineTo(icon_xw,icon_yh);
+    ctx.lineTo(icon_x,icon_yh);
+    ctx.lineTo(icon_x,icon_y + icon_hap);
+    ctx.lineTo(icon_x + icon_hap,icon_y + icon_hap);
+    ctx.lineTo(icon_x + icon_hap, icon_y);
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+    
+    // Draw platform text
+    var font_x_platform = icon_x + 0.5 * icon_w;
+    var font_y_platform = icon_y + 0.083 * canvas.height;
+    
+    var platformText = (train.platform !== null ? train.platform : "-");
+    ctx.font = "bold " + font_size_platform + "px " + this.font;
+    ctx.textAlign = "center";
+    ctx.fillStyle = this.dark;
+    ctx.fillText(platformText,font_x_platform,font_y_platform);
+
+    // Draw type
+    ctx.font = "bold " + font_size_type + "px " + this.font;
+    ctx.textAlign = "left";
+    ctx.fillStyle = this.dark;
+    ctx.fillText(train.type,cols[3].leftMargin(),base.y + font_y_type);
+  }
+};
+
+// Create a canvas and draw the PB7 on it
+PB7.prototype.createAndDraw = function(width, height)
+{
+  var canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  canvas.className = "pb7";
+  
+  this.draw(canvas);
+  return canvas;
+};
+
+//-----------------------------------------------------------------------------
+
 // CTA class for drawing CTAs from two trains
 var CTA = function(train, nextTrain)
 {
@@ -350,10 +579,10 @@ var CTA = function(train, nextTrain)
   
   // Fill info lines
   this.infos = [];
-  if (typeof this.train.infoOptional !== 'undefined')
+  if (typeof this.train.tips !== 'undefined')
   {
-    for (var i = 0; i < this.train.infoOptional.length; i ++)
-      this.infos.push({text: this.train.infoOptional[i], color: CTA.prototype.light});
+    for (var i = 0; i < this.train.tips.length; i ++)
+      this.infos.push({text: this.train.tips[i], color: CTA.prototype.light});
   }
   if (typeof this.train.info !== 'undefined')
   {
@@ -363,12 +592,13 @@ var CTA = function(train, nextTrain)
   
   // Add info for next train
   if (this.nextTrain !== null)
-    this.infos.push({text: this.nextTrain.toString(), color: CTA.prototype.dark});
+    this.infos.push({text: "Hierna/next: " + this.nextTrain.toString(), color: CTA.prototype.dark});
 };
 
 // Constants
 CTA.prototype.light = "rgb(255,255,255)";
 CTA.prototype.dark = "rgb(9,40,105)";
+CTA.prototype.red = "rgb(220,40,40)";
 CTA.prototype.font = "'Open Sans Condensed', sans-serif";
 
 // Return the opposite color for light and dark
@@ -390,15 +620,13 @@ CTA.prototype.draw = function(canvas)
   // Determine sizes
   var boundary_small = 0.019 * canvas.height;
   var boundary_large = 0.028 * canvas.height;
-  var delay_x = 0.350 * canvas.width;
-  var delay_height = 0.167 * canvas.height;
   var info_height = 0.092 * canvas.height;
   var font_y_time = 0.130 * canvas.height;
-  var font_y_destination = 0.333 * canvas.height;
-  var font_y_route = 0.487 * canvas.height;
+  var font_y_destination = 0.303 * canvas.height;
+  var font_y_route = 0.457 * canvas.height;
   var font_y_info = 0.067 * canvas.height;
   var font_size_time = 0.148 * canvas.height;
-  var font_size_destination = 0.200 * canvas.height;
+  var font_size_destination = 0.170 * canvas.height; // 0.200
   var font_size_route = 0.111 * canvas.height;
   var font_height_route = 0.13 * canvas.height;
   var font_size_info = 0.070 * canvas.height;
@@ -417,14 +645,11 @@ CTA.prototype.draw = function(canvas)
   // Draw delay if there is delay, else draw train type
   if (typeof this.train.delay !== 'undefined' && this.train.delay > 0)
   {
-    // Draw delay
-    ctx.fillStyle = this.dark;
-    ctx.fillRect(delay_x,0,canvas.width - delay_x,delay_height);
-    
+    // Draw delay    
     ctx.font = "bold " + font_size_time + "px " + this.font;
-    ctx.textAlign = "left";
-    ctx.fillStyle = this.light;
-    ctx.fillText(Formatter.delay(this.train.delay) + " minuten",delay_x + boundary_large,font_y_time);
+    ctx.textAlign = "right";
+    ctx.fillStyle = this.red;
+    ctx.fillText(Formatter.delay(this.train.delay) + " minuten",canvas.width - boundary_large,font_y_time);
   }
   else
   {
@@ -439,17 +664,7 @@ CTA.prototype.draw = function(canvas)
   ctx.font = "bold " + font_size_destination + "px " + this.font;
   ctx.textAlign = "left";
   ctx.fillStyle = this.dark;
-  /*var text = function(names, maxWidth)
-  {
-    for (var i = 0; i < names.length; i ++)
-    {
-      if (ctx.measureText(names[i]).width <= maxWidth)
-        return names[i];
-    }
-    return Utils.wrap(names[0],maxWidth,canvas,false,true)[0];
-  }(this.train.destination.names,canvas.width - 2 * boundary_small);*/
-  var text = this.train.destination.name;
-  ctx.fillText(text,boundary_small,font_y_destination);
+  ctx.fillText(this.train.destination.name,boundary_small,font_y_destination);
   
   // Draw route
   ctx.font = "bold " + font_size_route + "px " + this.font;
@@ -463,24 +678,23 @@ CTA.prototype.draw = function(canvas)
   // Draw information lines (including next train)
   for (var i = 0; i < this.infos.length; i ++)
   {
+    var info = this.infos[i];
     var index = this.infos.length - (i + 1);
-    !function(info, index)
-    {
-      // Draw ribbon
-      ctx.fillStyle = info.color;
-      ctx.fillRect(0,canvas.height - (index + 1) * info_height,canvas.width,info_height);
+   
+    // Draw ribbon
+    ctx.fillStyle = info.color;
+    ctx.fillRect(0,canvas.height - (index + 1) * info_height,canvas.width,info_height);
     
-      ctx.fillStyle = this.opposite(info.color);
-      ctx.fillRect(0,canvas.height - (index + 1) * info_height,canvas.width,stroke);
+    ctx.fillStyle = this.opposite(info.color);
+    ctx.fillRect(0,canvas.height - (index + 1) * info_height,canvas.width,stroke);
   
-      // Draw text    
-      ctx.font = "bold " + font_size_info + "px " + CTA.prototype.font;
-      ctx.textAlign = "left";
-      ctx.fillStyle = this.opposite(info.color);
+    // Draw text    
+    ctx.font = "bold " + font_size_info + "px " + CTA.prototype.font;
+    ctx.textAlign = "left";
+    ctx.fillStyle = this.opposite(info.color);
       
-      var text = Utils.wrap(info.text,canvas.width - 2 * boundary_small,canvas,true,true)[0];
-      ctx.fillText(text,boundary_small,canvas.height - (index + 1) * info_height + font_y_info);
-    }.call(this,this.infos[i],index);
+    var text = Utils.wrap(info.text,canvas.width - 2 * boundary_small,canvas,true,true)[0];
+    ctx.fillText(text,boundary_small,canvas.height - (index + 1) * info_height + font_y_info);
   }
 };
 

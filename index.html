@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ctanvas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <link href="preview.css" rel="stylesheet">
+  </head>
+  
+  <body>
+    <main>
+      <div style="font-family: 'Open Sans Condensed'; font-weight: 700; display: hidden;">&nbsp;</div>
+      
+      <form id="station-form" class="form-inline">
+        <div class="input-group input-group-lg" style="width: 100%;">
+          <input type="text" id="station" class="form-control input-lg" placeholder="Station">
+          <span class="input-group-btn">
+            <button type="button" id="station-random" class="btn btn-default btn-lg" data-toggle="tooltip" data-placement="bottom" title="Willekeurig station"><span class="glyphicon glyphicon-random"></span></button>
+            <button type="submit" id="station-submit" class="btn btn-info btn-lg" data-toggle="tooltip" data-placement="bottom" title="Weergeven"><span class="glyphicon glyphicon-send"></span></button>
+          </span>
+        </div>
+      </form>
+      
+      <div id="pb7-container"></div>
+      <div id="cta-container"></div>
+    </main>
+    
+    <script src="https://code.jquery.com/jquery-1.12.2.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="src/ctanvas.js"></script>
+    <script>
+      var station;
+     
+      // Function for loading stations
+      var loadStation = function(id)
+      {
+        // Load the station into memory
+        station = new Station(id);
+        
+        // Set title and inputs
+        $('title').text(station.name + " - Ctanvas");
+        $('#station').val(station.name);
+      };
+      
+      // if the document is ready, then load the stations
+      $(function()
+      {
+        $('[data-toggle="tooltip"]').tooltip();
+      });
+      
+      // If the document is ready, the load Utrecht Centraal
+      $(document).on('cta-stations-ready',function()
+      {
+        loadStation("ut");
+      });
+      
+      // If the station is changed, then load it
+      $('form#station-form').on('submit',function()
+      {
+        try
+        {
+          loadStation($('#station').val());
+          return false;
+        }
+        catch (error)
+        {
+          $('#cta-container').html('<p class="bg-danger">' + error + '</p>');
+          return false;
+        }
+      });
+      
+      // If the CTAs are loaded, draw them
+      $(document).on('cta-ready',function()
+      {
+        console.log(station);
+        
+        $('#pb7-container').html("");
+        //for (var i = 0; i < station.pb7.length; i ++)
+          $('#pb7-container').append(station.pb7[0].createAndDraw(800,400));
+        
+        $('#cta-container').html("");
+        for (var platform in station.cta)
+          $('#cta-container').append(station.cta[platform].createAndDraw(400,200));
+      });
+      
+      // Random button
+      $('button#station-random').click(function()
+      {
+        loadStation(Station.random());
+      });
+      </script>
+  </body>
+</html>

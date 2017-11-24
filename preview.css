@@ -1,0 +1,22 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700);
+
+* {
+  border-radius: 0 !important;
+  -moz-border-radius: 0 !important;
+  -webkit-border-radius: 0 !important;
+}
+
+body, input {
+  font-family: 'Open Sans Condensed', sans-serif;
+  font-weight: 300;
+}
+
+main {
+  width: 900px;
+  margin: 0 auto;
+}
+
+.pb7, .cta {
+  border: 2px rgb(14,58,153) solid;
+  margin: 4px;
+}

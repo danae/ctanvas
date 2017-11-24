@@ -20,21 +20,21 @@
     </main>
     
     <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script src="../ctanvas.js"></script>
+    <script src="../src/ctanvas.js"></script>
     <script>
       $(document).ready(function()
       {
-        var cta = new CTA(Train.of({
+        var cta = new CTA(new Train({
           type: 'Lightrail',
-          destination: {names: ['Woudenberg-Scherpenzeel']},
-          route: [{names: ['Amersfoort Centraal']}, {names: ['Amersfoort Arnhemseweg']}],
+          destination: {name: 'Woudenberg-Scherpenzeel'},
+          route: [{name: 'Amersfoort Centraal'}, {name: 'Amersfoort Arnhemseweg'}],
           time: new Date(Date.now()),
           delay: 13,
           platform: "1",
           infoOptional: ["Stopt ook bij Thomas voor de deur","Stopt niet bij Menno voor de deur"]
-        }),Train.of({
+        }),new Train({
           type: 'Lightrail',
-          destination: {names: ['Amersfoort Vathorst']},
+          destination: {name: 'Amersfoort Vathorst'},
           time: new Date(Date.now())
         }));
         cta.draw(document.getElementById('cta'));
