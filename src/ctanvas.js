@@ -181,6 +181,7 @@ var Train = function(object)
   this.type = "";
   this.operator = "";
   this.destination = null;
+  this.originalDestination = null;
   this.route = [];
   this.time = Date.now();
   this.delay = 0;
@@ -225,7 +226,6 @@ var Station = function(object, silent = false)
   // Load the trains and create CTAs
   $.ajax({
     url: "vertrektijden_proxy.php",
-    crossDomain: true,
     data: {station: this.code},
     context: this,
     success: function(data)
@@ -240,6 +240,7 @@ var Station = function(object, silent = false)
           type: vertrektijd.soort,
           operator: vertrektijd.vervoerder,
           destination: Station.findOrFake(vertrektijd.bestemming),
+          originalDestination: (typeof vertrektijd.bestemmingOrigineel !== 'undefined' && vertrektijd.bestemmingOrigineel !== null) ? Station.findOrFake(vertrektijd.bestemmingOrigineel) : Station.findOrFake(vertrektijd.bestemming),
           route: (typeof vertrektijd.via !== 'undefined' && vertrektijd.via !== null) ? vertrektijd.via.split(', ').map(station => Station.findOrFake(station)) : [],
           time: new Date(vertrektijd.vertrek),
           delay: vertrektijd.vertraging,
@@ -665,7 +666,7 @@ CTA.prototype.draw = function(canvas)
   ctx.font = "bold " + font_size_destination + "px " + this.font;
   ctx.textAlign = "left";
   ctx.fillStyle = this.dark;
-  ctx.fillText(this.train.destination.name,boundary_small,font_y_destination);
+  ctx.fillText(this.train.originalDestination.name,boundary_small,font_y_destination);
   
   // Draw route
   ctx.font = "bold " + font_size_route + "px " + this.font;
