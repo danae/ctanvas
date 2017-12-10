@@ -28,7 +28,7 @@ var Index = null;
 $(function()
 {
   $.ajax({
-    url: "stations_proxy.php",
+    url: "https://api.rijdendetreinen.nl/v1/json/stations?cors=yes",
     dataType: "json",
     context: this,
     success: function(stations)
@@ -225,7 +225,7 @@ var Station = function(object, silent = false)
   
   // Load the trains and create CTAs
   $.ajax({
-    url: "vertrektijden_proxy.php",
+    url: "https://api.rijdendetreinen.nl/v2/json/vertrektijden?cors=yes",
     data: {station: this.code},
     context: this,
     success: function(data)
